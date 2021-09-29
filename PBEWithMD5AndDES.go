@@ -1,17 +1,17 @@
 package PBEWithMD5AndTripleDES
 
 import (
+	"bytes"
 	"crypto/cipher"
 	"crypto/des"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/asn1"
-	"errors"
 	"fmt"
 )
 
 type PBEParams struct {
-	Salt []byte
+	Salt       []byte
 	Iterations int
 }
 
@@ -48,7 +48,7 @@ func DecodePBEParams(encodedParams []byte) (*PBEParams, error) {
 
 type Cipher struct {
 	block cipher.Block
-	iv []byte
+	iv    []byte
 }
 
 //NewDecryptCipher construct decrypter cipher by PBE params and password
@@ -69,22 +69,19 @@ func NewEncryptCipher(password []byte, params PBEParams) *Cipher {
 	return cipher
 }
 
-func (c *Cipher) Encrypt(dst, src []byte) error {
-	if  len(dst) < len(src) {
-		return errors.New("dst size must equal src size")
-	}
+func (c *Cipher) Encrypt(src []byte) []byte {
+	src = PKCS5Padding(src, c.block.BlockSize())
+	dst := make([]byte, len(src))
 	enc := cipher.NewCBCEncrypter(c.block, c.iv)
 	enc.CryptBlocks(dst, src)
-	return nil
+	return dst
 }
 
-func (c *Cipher) Decrypt(dst, src []byte) error {
-	if  len(dst) < len(src) {
-		return errors.New("dst size must equal src size")
-	}
+func (c *Cipher) Decrypt(src []byte) []byte {
 	dec := cipher.NewCBCDecrypter(c.block, c.iv)
+	dst := make([]byte, len(src))
 	dec.CryptBlocks(dst, src)
-	return nil
+	return PKCS5Trimming(dst)
 }
 
 func (c *Cipher) init(password []byte, params PBEParams) {
@@ -98,8 +95,7 @@ func (c *Cipher) init(password []byte, params PBEParams) {
 	return
 }
 
-
-//getDerivedKey 
+//getDerivedKey
 /*
  Here's how this algorithm works:
       1. split salt in two halves. If the two halves are identical, invert(*) the first half.
@@ -124,4 +120,15 @@ func getDerivedKey(password []byte, salt []byte, count int) ([]byte, []byte) {
 	key := append(derived[0][:], derived[1][:8]...)
 	iv := derived[1][8:]
 	return key, iv
+}
+
+func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	pad := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, pad...)
+}
+
+func PKCS5Trimming(encrypt []byte) []byte {
+	padding := encrypt[len(encrypt)-1]
+	return encrypt[:len(encrypt)-int(padding)]
 }

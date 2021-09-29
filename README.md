@@ -6,7 +6,7 @@ Usage example:
 ```golang
 
 import (
-    tripleDES "PBEWithMD5AndTripleDES"
+    tripleDES "github.com/ebirukov/PBEWithMD5AndTripleDES"
     "fmt"
 )
 
@@ -22,12 +22,10 @@ func main() {
         panic(err.Error())
     }
     
-    encrypted := make([]byte, len(originalText))
-    enc.Encrypt(encrypted, originalText)
+    encrypted := enc.Encrypt(originalText)
     fmt.Printf("encrypted data: % #x\n", encrypted)
     
-    decrypted := make([]byte, len(encrypted))
-    dec.Decrypt(decrypted, encrypted)
+    decrypted := dec.Decrypt(encrypted)
     //print decrypted secret string: mysecret_content
     fmt.Printf("decrypted secret string: %+v\n", string(decrypted))
 }

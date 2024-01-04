@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	
 	tripleDES "github.com/ebirukov/PBEWithMD5AndTripleDES"
 )
 
@@ -14,7 +16,7 @@ func main() {
 	enc := tripleDES.NewEncryptCipher(password, params)
 	dec, err := tripleDES.NewDecryptCipher(password, params.Encode())
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	encrypted := enc.Encrypt(originalText)
